@@ -134,19 +134,41 @@ let damage_to_wiz spell wiz =
 (* Write a function that calculates the stats of a wizard after getting
    attacked by a particular spell.  *)
 let attack spell wiz =
-	wiz.hp - damage_to_wiz spell wiz
+	{wizard with hp = wizard.hp - damage_caused spell wizard}
 
 (* Write a function cast_spells that casts each of the skills of a wizard, or
    as many as he has mana for. Return the updated caster and the list of
    spells he managed to cast *)
-let cast_spells (caster : wizard) : wizard * spell list = failwith "todo"
-
+let cast_spells (caster : wizard) : wizard * spell list = 
+	let m = caster.ability in
+	let (available, spells_cast) =
+		List.fold_left
+			(fun (available, spells_cast) spell ->
+			let cost = mana_of_spell spell in
+			if cost < available
+			then (available - cost, spell::spells_cast)
+			else (available, spells_cast))
+      (m, [])
+      caster.skills
+  in
+  ({caster with ability = available}, spells_cast)
 
 (* Write a function that stands off two wizard in a duel. If the attacker is
    dead, the defender wins. The attacker, if he is still alive, casts his
    spells. If he cannot cast any spells, he loses. After the attacker casts
    his spells, the roles change and the defender takes his turn to attack. *)
 let rec duel (attacker : wizard) (defender : wizard) : wizard =
-  failwith "todo"
-
+	let defender =
+		if attacker.hp > 0
+		then
+			let (attacker, spells) = cast_spells attacker in
+			match spells with
+			| [] -> defender
+			| _ ->
+			let defender = List.fold_left attack defender spells in
+			duel defender attacker
+    else
+		defender
+	in defender
+	
 let _ = duel frodo snoop_dogg

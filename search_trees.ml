@@ -187,7 +187,12 @@ let rec member2 x = function
    - : bool = true
    ---------- *)
 
-let bst_of_list l = ()
+let bst_of_list l = 
+	let rec bst_with_acc a acc =
+		match a with
+		| [] -> acc
+		| x :: xs -> bst_with_acc xs (insert x acc)
+	in bst_with_acc l Empty
 
 (* Create a function "tree_sort l" ['a list -> 'a list] that sorts the list l
    by combining previously defining functions.
@@ -196,7 +201,9 @@ let bst_of_list l = ()
    - : string list = ["a"; "b"; "c"; "d"; "e"; "f"]
    ---------- *)
 
-let tree_sort l = ()
+let tree_sort l = 
+	let tree = bst_of_list l in
+	list_of_tree tree
 
 (* The function "succ bst" ['a tree -> 'a option] returns the succesor of the
    tree root, if it exists. For instance, for bst = Node(l, x, r) it returns
@@ -210,9 +217,25 @@ let tree_sort l = ()
    - : int option = None
    ---------- *)
 
-let succ bst = ()
+let succ = function
+	| Empty -> None
+	| Node(_, _, r) -> let right = list_of_tree r in
+	match right with
+	| [] -> None
+	| x :: _ -> Some x
 
-let pred bst = ()
+let rec rev = function
+	| [] -> []
+	| x :: xs -> rev xs @ [x]
+	
+let pred = function
+	| Empty -> None
+	| Node(l, _, _) -> let left = rev (list_of_tree l) in
+	match left with
+	| [] -> None
+	| x :: _ -> Some x
+	
+
 
 (* In lectures you mentioned multiple different algorithms for deletion.
    One uses "succ" and the other "pred".
@@ -227,7 +250,21 @@ let pred bst = ()
    Node (Node (Empty, 6, Empty), 11, Empty))
    ---------- *)
 
-let rec delete x bst = ()
+let rec delete x = function
+	| Empty -> Empty
+	| Node(l, y, r) as t->
+		if x > y then
+			Node(l, y, delete x r)
+		else if x < y then
+			Node(delete x l, y, r)
+		else
+			(*The node must be deleted.*)
+			match succ t with
+			| None -> l (*Only happens when r is Empty.*)
+			| Some s ->
+				let clean_r = delete s r in
+				Node(l, s, clean_r)
+
 
 (* An additional option is to change the type of the tree. Define a new tree
    type that additionally contains an information about its state, that can be
@@ -235,8 +272,11 @@ let rec delete x bst = ()
 
 type state = Exists | Ghost
 
-type 'a phantom_tree = unit
-
+type 'a phantom_tree = 
+	| P_Empty
+	| P_Node of 'a phantom_tree * 'a * 'a phantom_tree * state
+	
+	
 (* The function "phantomize t" ['a tree -> 'a phantom_tree], that maps a regular
    tree into a phantom tree.
    Then write the function "kill x pt" ['a -> 'a phantom_tree -> 'a phantom_tree]

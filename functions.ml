@@ -85,7 +85,7 @@ let map_tlrec f l =
  - : int list = [0; 1; 2; 5; 6; 7]
  ---------- *)
 
-let rec mapi f l =
+let mapi f l =
 	let rec mapping l acc i =
 		match l with
 		|[] -> reverse acc
@@ -118,7 +118,7 @@ let rec zip l1 l2 =
  - : (int * string * int) list = [(0, "a", 7); (1, "", 3); (2, "c", 4); (3, "d", 2)]
  ---------- *)
 
-let rec zip_enum_tlrec l1 l2 = 
+let zip_enum_tlrec l1 l2 = 
 	let rec zipping l1 l2 acc i =
 		match (l1, l2) with
 		|([], []) -> reverse acc
@@ -134,15 +134,28 @@ let rec zip_enum_tlrec l1 l2 =
  - : int list * string list = ([0; 1; 2], ["a"; "b"; "c"])
  ---------- *)
 
-let unzip l = ()
+let rec unzipl = function
+	| [] -> []
+	| (a0, _):: xs -> a0 :: unzipl xs
 
+let rec unzipr = function
+	| [] -> []
+	| (_, a0) :: xs -> a0 :: unzipr xs
+
+let unzip l = (unzipl l, unzipr l)
+	
 (* The function "unzip_tlrec l" is the tail recursive version of unzip.
  ----------
  # unzip_tlrec [(0,"a"); (1,"b"); (2,"c")];;
  - : int list * string list = ([0; 1; 2], ["a"; "b"; "c"])
  ---------- *)
 
-let unzip_tlrec l = ()
+let unzip_tlrec l = 
+	let rec unzip_tlrec_aux l xs_rev ys_rev =
+		match l with
+		| [] -> (reverse xs_rev, reverse ys_rev)
+		| (x,y) :: tl -> unzip_tlrec_aux tl (x :: xs_rev) (y :: ys_rev) in
+	unzip_tlrec_aux l [] []
 
 (* The function "fold_left_no_acc f l" accepts a list l = [l0; l1; l2; ...; ln] and function f
  and returns the value of f(... (f (f (f l0 l1) l2) l3) ... ln).
@@ -152,7 +165,10 @@ let unzip_tlrec l = ()
  - : string = "FICUS"
  ---------- *)
 
-let fold_left_no_acc f l = ()
+let rec fold_left_no_acc f = function
+	| [] | _::[] -> failwith "List too short."
+	| x::y::[] -> f x y
+	| x::y::tl -> fold_left_no_acc f ((f x y) :: tl)
 
 (* The function "apply_sequence f x n" returns the list of repeated applications 
  of the function f on x, [x; f x; f (f x); ...; f applied n times on x].
@@ -164,7 +180,11 @@ let fold_left_no_acc f l = ()
  - : int list = []
  ---------- *)
 
-let apply_sequence f x n = ()
+let apply_sequence f x n = 
+	let rec apply_sequence_aux f x n acc =
+		if n < 0 then reverse acc 
+		else apply_sequence_aux f (f x) (n-1) (x::acc)
+	in apply_sequence_aux f x n []
 
 (* The function "filter f l" returns the list of elements for which 
  (f x) equals true.
@@ -173,7 +193,9 @@ let apply_sequence f x n = ()
  - : int list = [4; 5]
  ---------- *)
 
-let filter f l = ()
+let rec filter f = function 
+	| [] -> []
+	| x :: xs -> if f x then x :: (filter f xs) else (filter f xs)
 
 (* The function "exists f l" checks if there exists an element of the list l
  for which the function f returns true, otherwise it returns false.
@@ -185,7 +207,9 @@ let filter f l = ()
  - : bool = false
  ---------- *)
 
-let exists f l = ()
+let rec exists f = function
+	| [] -> false
+	| x :: xs -> if f x then true else exists f xs
 
 (* The function "first f none_value l" returns the first element of the list l
  for which f returns true. If such an element does not exist it returns none_value.
@@ -197,7 +221,9 @@ let exists f l = ()
  - : int = 0
  ---------- *)
 
-let first f none_value l = ()
+let first f none_value = function 
+	| [] -> none_value
+	| x :: xs -> if f x then x else first f none_value xs
   
 (* The northerners are attacking Middlebirch. As the archwizard you know the sequence
  of spells needed to protect Middlebirch. The sequence of spells is written as a list
@@ -230,6 +256,32 @@ let first f none_value l = ()
   ("Mr Duck", "Protect"); ("Kylo Ren", "Banish"); ("Snoop Dogg", "Blaze")]
  ----------*)
 
-let able_protectors spells wizards = ()
+let able_protectors spells wizards = 
+	(* Unzip to sum all costs. *)
+	let (_, spell_values) = unzip spells in
+	(* 0::0::spell_values added so that an empty list sums to 0. *)
+	let sequence_cost = fold_left_no_acc (+) (0::0::spell_values) in
+	(* Make filter function. *)
+	let can_cast (_, wizard_ability) = (wizard_ability >= sequence_cost) in
+	(* Get only the wizards who can cast. *)
+	let mighty_wizards = filter can_cast wizards in
+	(* Extract names *)
+	let (mighty_wizard_names, _) = unzip_tlrec mighty_wizards in
+	mighty_wizard_names
 
-let fails_on spells wizards = ()
+let fails_on spells wizards =
+	(* Write auxiliary function that determines the first uncastable spell. *)
+	let rec gets_stuck spells wizard_ability =
+		match spells with
+		| [] -> ""
+		| (spell_name, spell_value)::tl ->
+			if wizard_ability >= spell_value
+			then gets_stuck tl (wizard_ability - spell_value)
+			else spell_name
+	in
+	(* Unzip to get a list of wizard ability values. *)
+	let (wizard_names, wizard_abilities) = unzip wizards in
+	(* Create a list of first uncastable spells. *)
+	let stuck_spells = map (gets_stuck spells) wizard_abilities in
+	(* Zip it back together. *)
+	zip wizard_names stuck_spells
