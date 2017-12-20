@@ -72,7 +72,7 @@ let rec izpisi_vrednosti d =
 	print_newline;
 	match d.gozd with
 	| [] -> print_newline
-	| x::xs -> (izpisi_vrednosti x;
+	| x::xs -> (izpisi_vrednosti x
 	print_newline;
 	List.map izpisi_vrednosti xs)
 	
@@ -129,4 +129,4 @@ let rec drevo_globine_n n =
    Opomba: kot ste videli na vajah, nekatere funkcije iz modula List,
    na primer List.map, niso repno rekurzivne, zato se jim raje
    izognite. *)
-let zlozi = failwith "dopolni me"
+let zlozi f acc d = ()
