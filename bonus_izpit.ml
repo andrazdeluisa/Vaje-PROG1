@@ -67,6 +67,8 @@ let vrni_gozd d = d.gozd
 (* 2.4) Definirajte funkcijo, ki izpiše vse vrednosti v rožnem drevesu celih števil.
    Števila naj bodo v ločenih vrsticah. Uporabite (print_int : int -> unit) in
    (print_newline : unit -> unit). *)
+
+   (*
 let rec izpisi_vrednosti d = 
 	print_int d.koren;
 	print_newline;
@@ -75,6 +77,7 @@ let rec izpisi_vrednosti d =
 	| x::xs -> (izpisi_vrednosti x
 	print_newline;
 	List.map izpisi_vrednosti xs)
+*)
 	
 	
 
@@ -116,7 +119,15 @@ let rec drevo_globine_n n =
 	let gozd = [drevo_globine_n (n-1)] in
 	{koren = koren; gozd = gozd}
 		
-	
+		
+type 'a drevo = Rose of 'a * 'a drevo list
+
+let globoko_drevo n =
+	let rec aux acc n =
+		if n > 0
+		then aux (Rose (n, [acc])) (n-1)
+		else acc
+	in aux (Rose (n, [])) (n-1)
 
 (* 2.7) Definirajte funkcijo, ki sprejme funkcijo (f : 'b -> 'a -> 'b) in začetno vrednost (acc : 'b)
    in funkcijo f zloži [fold] preko drevesa (t : 'a drevo). Vrstni red pri tem ni pomemben.
